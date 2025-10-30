@@ -59,14 +59,14 @@ def get_java_dependencies():
     return ['net.imagej:imagej:2.16.0',
             'net.imagej:imagej-legacy:2.0.0',
             'ch.epfl.biop:ijl-utilities-wrappers:0.11.5',
-            'ch.epfl.biop:ImageToAtlasRegister:0.10.7',
-            'ch.epfl.biop:bigdataviewer-biop-tools:0.12.2',
-            'sc.fiji:bigdataviewer-playground:0.11.2',
+            'ch.epfl.biop:ImageToAtlasRegister:0.11.0',
+            'ch.epfl.biop:bigdataviewer-biop-tools:0.13.4',
+            'sc.fiji:bigdataviewer-playground:0.12.0',
             'sc.fiji.bigdataviewer:bigdataviewer-playground-display:0.5.0',
             'sc.fiji:bigwarp_fiji:9.3.1',
             'net.imglib2:imglib2-realtransform:4.0.3',
             'com.formdev:flatlaf:3.5.1',
-            'ch.epfl.biop:bigdataviewer-image-loaders:0.11.0',
+            'ch.epfl.biop:bigdataviewer-image-loaders:0.11.2',
             'ch.epfl.biop:atlas:0.3.2',
             'org.scijava:scijava-ui-swing:1.0.3',
             'net.imglib2:imglib2:7.1.4',
@@ -474,7 +474,7 @@ class Abba:
                    use_gui: bool,
                    wait_betweem_each_step: bool):
         """
-        Check for updates
+        Complete ABBA process in a benchmark
 
         Parameters:
         comment (str):
@@ -499,7 +499,7 @@ class Abba:
 
     def cite_info(self):
         """
-        How to cite ABBA
+        How to cite
 
         """
         ABBACiteInfoCommand = jimport('ch.epfl.biop.atlas.aligner.command.ABBACiteInfoCommand')
@@ -530,6 +530,17 @@ class Abba:
         ABBAForumHelpCommand = jimport('ch.epfl.biop.atlas.aligner.command.ABBAForumHelpCommand')
         return self.ij.command().run(ABBAForumHelpCommand, True)
 
+
+    def generate_methods_prompt(self):
+        """
+        Outputs a summary of methods used for the registration. Can be copy pasted in the llm of your choice.
+
+        """
+        ABBAGenerateMethodsPrompt = jimport('ch.epfl.biop.atlas.aligner.command.ABBAGenerateMethodsPrompt')
+        return self.ij.command().run(ABBAGenerateMethodsPrompt, True,
+                                     'mp', self.mp).get()
+
+
     def set_bdv_preferences(self):
         """
         Sets actions linked to key / mouse event in ABBA (not functional)
@@ -537,6 +548,17 @@ class Abba:
         """
         ABBASetBDVPreferencesCommand = jimport('ch.epfl.biop.atlas.aligner.command.ABBASetBDVPreferencesCommand')
         return self.ij.command().run(ABBASetBDVPreferencesCommand, True)
+
+
+    def start_log(self):
+        """
+        Close ABBA session
+
+        """
+        ABBAStartLogCommand = jimport('ch.epfl.biop.atlas.aligner.command.ABBAStartLogCommand')
+        return self.ij.command().run(ABBAStartLogCommand, True,
+                                     'mp', self.mp).get()
+
 
     def state_load(self,
                    state_file):
@@ -757,7 +779,7 @@ class Abba:
         channels (str): Slices channels, 0-based, comma separated, '*' for all channels
         convert_to_8_bits (bool): Convert to 8 bit image
         convert_to_jpg (bool): Convert to jpg (single channel recommended)
-        dataset_folder : QuickNII dataset folder
+        dataset_folder : QuickNII dataset export folder
         image_name (str): Section Name Prefix
         interpolate (bool):
         px_size_micron (float): Pixel Size in micron
@@ -773,6 +795,59 @@ class Abba:
                                      'image_name', image_name,
                                      'interpolate', interpolate,
                                      'px_size_micron', px_size_micron).get()
+
+
+    def export_std_zip_state(self,
+                             ba,
+                             channels: str,
+                             coronal,
+                             downscale_deformation_field: int,
+                             experiment_information: str,
+                             horizontal,
+                             identifier: str,
+                             sagittal,
+                             save_path,
+                             state_file,
+                             target_resolution_micrometer: float,
+                             x_axis: str,
+                             y_axis: str,
+                             z_axis: str):
+        """
+        Takes a full project and store a downscaled version of the dataset for sharing
+
+        Parameters:
+        ba :
+        channels (str): Slices channels, 0-based, comma separated, '*' for all channels
+        coronal :
+        downscale_deformation_field (int):
+        experiment_information (str):
+        horizontal :
+        identifier (str):
+        sagittal :
+        save_path :
+        state_file :
+        target_resolution_micrometer (float):
+        x_axis (str):
+        y_axis (str):
+        z_axis (str):
+        """
+        ExportStdZipStateCommand = jimport('ch.epfl.biop.atlas.aligner.command.ExportStdZipStateCommand')
+        return self.ij.command().run(ExportStdZipStateCommand, True,
+                                     'ba', ba,
+                                     'channels', channels,
+                                     'coronal', coronal,
+                                     'downscale_deformation_field', downscale_deformation_field,
+                                     'experiment_information', experiment_information,
+                                     'horizontal', horizontal,
+                                     'identifier', identifier,
+                                     'sagittal', sagittal,
+                                     'save_path', save_path,
+                                     'state_file', state_file,
+                                     'target_resolution_micrometer', target_resolution_micrometer,
+                                     'x_axis', x_axis,
+                                     'y_axis', y_axis,
+                                     'z_axis', z_axis).get()
+
 
     def export_transformed_atlas_to_imagej(self,
                                            atlas_channels: str,
@@ -796,6 +871,24 @@ class Abba:
                                      'downsampling', downsampling,
                                      'max_number_of_iterations', max_number_of_iterations,
                                      'resolution_level', resolution_level).get()
+
+
+    def import_demo_slices(self,
+                           demo_dataset: str,
+                           project_directory):
+        """
+        Open a set of demo brain sections
+
+        Parameters:
+        demo_dataset (str): Choose the number of sections to import
+        project_directory : Target directory for QuPath project (not required)
+        """
+        ImportDemoSlicesCommand = jimport('ch.epfl.biop.atlas.aligner.command.ImportDemoSlicesCommand')
+        return self.ij.command().run(ImportDemoSlicesCommand, True,
+                                     'mp', self.mp,
+                                     'demo_dataset', demo_dataset,
+                                     'project_directory', project_directory).get()
+
 
     def import_slice_from_image_plus(self,
                                      image,
@@ -872,6 +965,37 @@ class Abba:
                                      'increment_between_slices_mm', increment_between_slices_mm,
                                      'qupath_project', qupath_project,
                                      'slice_axis_initial_mm', slice_axis_initial_mm).get()
+
+
+    def import_slices_from_quicknii(self,
+                                    quicknii_project,
+                                    split_rgb_channels: bool):
+        """
+        Import images of a QuickNII Project as slices into ABBA
+
+        Parameters:
+        quicknii_project : QuickNII file (.json)
+        split_rgb_channels (bool): Split RGB channels
+        """
+        ImportSlicesFromQuickNIICommand = jimport('ch.epfl.biop.atlas.aligner.command.ImportSlicesFromQuickNIICommand')
+        return self.ij.command().run(ImportSlicesFromQuickNIICommand, True,
+                                     'mp', self.mp,
+                                     'quicknii_project', quicknii_project,
+                                     'split_rgb_channels', split_rgb_channels).get()
+
+
+    def import_std_zip_state(self,
+                             zip_file):
+        """
+        Opens a previously created zipped ABBA project.
+
+        Parameters:
+        zip_file :
+        """
+        ImportStdZipStateCommand = jimport('ch.epfl.biop.atlas.aligner.command.ImportStdZipStateCommand')
+        return self.ij.command().run(ImportStdZipStateCommand, True,
+                                     'zip_file', zip_file).get()
+
 
     def mirror_do(self,
                   mirror_side: str):
@@ -1098,6 +1222,21 @@ class Abba:
         return self.ij.command().run(RegisterSlicesRemoveLastCommand, True,
                                      'mp', self.mp).get()
 
+
+    def reindex_slices(self,
+                       new_indices: str):
+        """
+        Creates a new slice with reindexed channels.
+
+        Parameters:
+        new_indices (str): New indices in csv
+        """
+        ReindexSlicesCommand = jimport('ch.epfl.biop.atlas.aligner.command.ReindexSlicesCommand')
+        return self.ij.command().run(ReindexSlicesCommand, True,
+                                     'mp', self.mp,
+                                     'new_indices', new_indices).get()
+
+
     def rotate_slices(self,
                       angle_degrees: float,
                       axis_string: str):
@@ -1113,6 +1252,21 @@ class Abba:
                                      'mp', self.mp,
                                      'angle_degrees', angle_degrees,
                                      'axis_string', axis_string).get()
+
+
+    def set_slices_background(self,
+                              white_background_value: int):
+        """
+        Allow to work with white background images.
+
+        Parameters:
+        white_background_value (int): White value (8-bit or rgb: 255, 16-bit:65535)
+        """
+        SetSlicesBackgroundCommand = jimport('ch.epfl.biop.atlas.aligner.command.SetSlicesBackgroundCommand')
+        return self.ij.command().run(SetSlicesBackgroundCommand, True,
+                                     'mp', self.mp,
+                                     'white_background_value', white_background_value).get()
+
 
     def set_slices_deselected(self,
                               slices_csv: str):
